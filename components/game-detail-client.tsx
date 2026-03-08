@@ -57,23 +57,108 @@ function StatBlock({ label, value, accent }: { label: string; value: string; acc
   )
 }
 
+// ─── No embed fallback ────────────────────────────────────────────────────────
+function NoEmbedState({ game, onExit }: { game: Game; onExit: () => void }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 text-center">
+      <div
+        className="w-20 h-20 rounded-3xl flex items-center justify-center text-3xl"
+        style={{ background: game.accent + '20', border: `1px solid ${game.accent}35` }}
+      >
+        🎮
+      </div>
+      <div>
+        <h2 className="text-xl font-black text-white mb-2">{game.title}</h2>
+        <p className="text-sm max-w-sm leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Ce jeu sera disponible prochainement. L'embed n'est pas encore configuré.
+        </p>
+      </div>
+      <div className="flex flex-col gap-3 items-center">
+        <div
+          className="px-5 py-3 rounded-2xl text-sm border text-left max-w-xs"
+          style={{ borderColor: game.accent + '30', backgroundColor: game.accent + '08' }}
+        >
+          <p className="text-xs font-bold mb-1" style={{ color: game.accent }}>Pour activer ce jeu :</p>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>
+            Ajoute un <code className="text-white/70">embedUrl</code> valide dans{' '}
+            <code className="text-white/70">data/games.ts</code> pour ce jeu.
+          </p>
+        </div>
+        <motion.button
+          onClick={onExit}
+          className="px-6 py-2.5 rounded-full text-sm font-medium border"
+          style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)' }}
+          whileHover={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}
+        >
+          Retour
+        </motion.button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Build GameDistribution iframe URL ───────────────────────────────────────
+// embedUrl can be:
+//   - A full URL (https://...)
+//   - A 32-char GD game ID → auto-builds GD URL with publisher ID
+function buildEmbedUrl(game: Game): string {
+  const raw = game.embedUrl ?? ''
+  if (!raw) return ''
+  // Already a full URL
+  if (raw.startsWith('http') || raw.startsWith('/')) return raw
+  // 32-char GD game ID
+  const publisherId = process.env.NEXT_PUBLIC_GD_PUBLISHER_ID ?? ''
+  const title = encodeURIComponent(game.title)
+  const base = `https://html5.api.gamedistribution.com/${raw}/`
+  const params = new URLSearchParams({
+    gdSdk: 'included',
+    ...(publisherId && { advertisingNetworkId: publisherId }),
+    sciApplicatioName: 'arcadewave',
+    sciGameTitle: game.title,
+  })
+  return `${base}?${params.toString()}`
+}
+
 // ─── Game iframe player ───────────────────────────────────────────────────────
 function GamePlayer({ game, onExit }: { game: Game; onExit: () => void }) {
   const isFlash = game.isFlash
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const ruffleRef = useRef<HTMLDivElement>(null)
+  const [iframeError, setIframeError] = useState(false)
+  const [iframeLoaded, setIframeLoaded] = useState(false)
+
+  const resolvedUrl = buildEmbedUrl(game)
+  const hasEmbed = !!resolvedUrl
 
   useEffect(() => {
-    // Load Ruffle for Flash games
-    if (isFlash && typeof window !== 'undefined') {
-      const existing = document.querySelector('script[data-ruffle]')
-      if (!existing) {
-        const s = document.createElement('script')
-        s.src = 'https://unpkg.com/@ruffle-rs/ruffle'
-        s.setAttribute('data-ruffle', '1')
-        document.head.appendChild(s)
-      }
+    if (!isFlash || !hasEmbed) return
+    // Load Ruffle CDN if not already loaded
+    const existing = document.querySelector('script[data-ruffle]')
+    const doLoad = () => {
+      const el = ruffleRef.current
+      if (!el) return
+      const ruffle = (window as any).RufflePlayer?.newest()
+      if (!ruffle) return
+      el.innerHTML = ''
+      const player = ruffle.createPlayer()
+      player.style.width = '100%'
+      player.style.height = '100%'
+      player.load(resolvedUrl).catch(() => setIframeError(true))
+      el.appendChild(player)
     }
-  }, [isFlash])
+    if (existing) {
+      const interval = setInterval(() => {
+        if ((window as any).RufflePlayer) { clearInterval(interval); doLoad() }
+      }, 200)
+      return () => clearInterval(interval)
+    }
+    const s = document.createElement('script')
+    s.src = 'https://unpkg.com/@ruffle-rs/ruffle'
+    s.setAttribute('data-ruffle', '1')
+    s.onload = doLoad
+    s.onerror = () => setIframeError(true)
+    document.head.appendChild(s)
+  }, [isFlash, hasEmbed, resolvedUrl])
 
   return (
     <motion.div
@@ -90,10 +175,7 @@ function GamePlayer({ game, onExit }: { game: Game; onExit: () => void }) {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', backgroundColor: 'rgba(7,7,15,0.95)' }}
       >
         <div className="flex items-center gap-3">
-          <div
-            className="w-1.5 h-6 rounded-full"
-            style={{ backgroundColor: game.accent, boxShadow: `0 0 12px ${game.accent}` }}
-          />
+          <div className="w-1.5 h-6 rounded-full" style={{ backgroundColor: game.accent, boxShadow: `0 0 12px ${game.accent}` }} />
           <span className="font-bold text-white">{game.title}</span>
           {isFlash && (
             <span className="px-2 py-0.5 text-xs rounded-full border" style={{ borderColor: game.accent + '40', color: game.accent, backgroundColor: game.accent + '15' }}>
@@ -101,52 +183,62 @@ function GamePlayer({ game, onExit }: { game: Game; onExit: () => void }) {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <motion.button
-            onClick={onExit}
-            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border"
-            style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
-            whileHover={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}
-          >
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            Quitter
-          </motion.button>
-        </div>
+        <motion.button
+          onClick={onExit}
+          className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium border"
+          style={{ borderColor: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}
+          whileHover={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}
+        >
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          Quitter
+        </motion.button>
       </div>
 
       {/* Game frame */}
       <div className="flex-1 relative">
-        {isFlash ? (
-          // Ruffle renders a <ruffle-player> into a div
-          <div
-            id="ruffle-container"
-            className="w-full h-full"
-            ref={el => {
-              if (!el || !game.embedUrl) return
-              const ruffle = (window as any).RufflePlayer?.newest()
-              if (!ruffle) return
-              el.innerHTML = ''
-              const player = ruffle.createPlayer()
-              player.style.width = '100%'
-              player.style.height = '100%'
-              player.load(game.embedUrl)
-              el.appendChild(player)
-            }}
-          />
+        {!hasEmbed || iframeError ? (
+          <NoEmbedState game={game} onExit={onExit} />
+        ) : isFlash ? (
+          <div ref={ruffleRef} className="w-full h-full">
+            {!iframeLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-sm animate-pulse" style={{ color: 'rgba(255,255,255,0.4)' }}>
+                  Chargement de Ruffle…
+                </p>
+              </div>
+            )}
+          </div>
         ) : (
-          <iframe
-            ref={iframeRef}
-            src={game.embedUrl}
-            className="w-full h-full border-0"
-            allow="autoplay; fullscreen; microphone; gamepad"
-            title={game.title}
-          />
+          <>
+            {/* Loading spinner until iframe fires onLoad */}
+            {!iframeLoaded && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10">
+                <div
+                  className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
+                  style={{ borderColor: game.accent + '50', borderTopColor: game.accent }}
+                />
+                <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Chargement…</p>
+              </div>
+            )}
+            <iframe
+              ref={iframeRef}
+              src={resolvedUrl}
+              className="w-full h-full border-0"
+              allow="autoplay; fullscreen; microphone; gamepad"
+              title={game.title}
+              onLoad={() => setIframeLoaded(true)}
+              onError={() => setIframeError(true)}
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-pointer-lock"
+            />
+          </>
         )}
 
-        {/* How to play overlay — shows briefly then hides */}
-        {game.howToPlay && <HowToPlayOverlay howToPlay={game.howToPlay} accent={game.accent} />}
+        {/* How to play overlay */}
+        {hasEmbed && !iframeError && game.howToPlay && (
+          <HowToPlayOverlay howToPlay={game.howToPlay} accent={game.accent} />
+        )}
       </div>
     </motion.div>
   )
