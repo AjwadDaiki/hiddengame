@@ -13,16 +13,19 @@ async function db() {
 }
 
 function docToGame(doc: any): Game {
+  // Use toJSON if available (Mongoose doc), otherwise spread plain lean object
   const raw = doc.toJSON ? doc.toJSON() : { ...doc }
   // isNew is reserved in Mongoose — stored as isNewGame in DB
   if ('isNewGame' in raw) {
     raw.isNew = raw.isNewGame
     delete raw.isNewGame
   }
-  return {
-    ...raw,
-    id: raw._id?.toString() ?? raw.id ?? raw.slug,
-  } as Game
+  // Extract id before removing MongoDB fields
+  const id = raw._id?.toString() ?? raw.slug
+  // Remove MongoDB-specific non-serializable fields (ObjectId, Date objects)
+  // These crash Next.js in production when passed as Server → Client Component props
+  const { _id, __v, createdAt, updatedAt, ...rest } = raw
+  return { ...rest, id } as Game
 }
 
 // ─── Fetch by slug ────────────────────────────────────────────────────────────
