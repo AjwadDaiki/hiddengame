@@ -1,0 +1,3 @@
+# Place .swf files here for Flash games
+# e.g. stick-war.swf, age-of-war.swf, etc.
+# These are served at /flash/[name].swf

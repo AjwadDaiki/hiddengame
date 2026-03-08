@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArcadeWave</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --accent: #a855f7;
+      --accent2: #06b6d4;
+      --bg: #08080f;
+      --surface: rgba(255,255,255,0.04);
+      --surface-hover: rgba(255,255,255,0.09);
+      --text: #f0f0f5;
+      --text-muted: #6b6b80;
+      --card-w: 200px;
+      --card-h: 280px;
+      --transition: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+    }
+
+    /* ─── AMBIENT BACKGROUND ─────────────────────────── */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .ambient-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0;
+      transition: background 1.2s ease, opacity 1.2s ease, transform 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .ambient-blob.active {
+      opacity: 0.18;
+    }
+
+    .blob1 {
+      width: 700px;
+      height: 700px;
+      top: -200px;
+      left: -150px;
+      background: var(--accent);
+    }
+
+    .blob2 {
+      width: 500px;
+      height: 500px;
+      bottom: -100px;
+      right: -100px;
+      background: var(--accent2);
+    }
+
+    .blob3 {
+      width: 400px;
+      height: 400px;
+      top: 30%;
+      left: 40%;
+      background: #ec4899;
+    }
+
+    /* ─── TOPBAR ─────────────────────────────────────── */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      height: 72px;
+      background: linear-gradient(to bottom, rgba(8,8,15,0.95) 0%, transparent 100%);
+      backdrop-filter: blur(0px);
+    }
+
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #a855f7, #06b6d4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .nav-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: var(--surface-hover);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition), transform 0.2s;
+    }
+
+    .nav-icon:hover {
+      background: rgba(255,255,255,0.12);
+      transform: scale(1.08);
+    }
+
+    .nav-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: rgba(255,255,255,0.7);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a855f7, #06b6d4);
+      border: 2px solid rgba(168,85,247,0.5);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .avatar:hover {
+      transform: scale(1.08);
+      box-shadow: 0 0 20px rgba(168,85,247,0.4);
+    }
+
+    .time-display {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── HERO ───────────────────────────────────────── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 64px 80px;
+      overflow: hidden;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #1e0533 0%, #0c1445 50%, #080c20 100%);
+      transition: background 1s ease;
+    }
+
+    .hero-bg-image {
+      position: absolute;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 60% 80% at 70% 40%, rgba(168,85,247,0.15) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 60% at 85% 60%, rgba(6,182,212,0.1) 0%, transparent 50%);
+    }
+
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 40%, var(--bg) 100%);
+    }
+
+    /* Floating game art placeholder in hero */
+    .hero-art {
+      position: absolute;
+      right: 10%;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 380px;
+      height: 520px;
+      border-radius: 20px;
+      background: linear-gradient(145deg, #2d1b69, #11998e);
+      box-shadow:
+        0 40px 120px rgba(0,0,0,0.6),
+        0 0 0 1px rgba(255,255,255,0.06),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      overflow: hidden;
+      transition: transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .hero-art-inner {
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(168,85,247,0.4) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(6,182,212,0.3) 0%, transparent 50%),
+        linear-gradient(145deg, #1a0533 0%, #0d1f40 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero-art-inner::after {
+      content: 'GAME';
+      font-size: 60px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.08);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      background: rgba(6,182,212,0.12);
+      border: 1px solid rgba(6,182,212,0.2);
+      padding: 5px 14px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+
+    .hero-tag::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent2);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 5vw, 64px);
+      font-weight: 900;
+      line-height: 1.0;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    .hero p {
+      font-size: 16px;
+      color: rgba(255,255,255,0.55);
+      line-height: 1.6;
+      margin-bottom: 36px;
+      max-width: 440px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      border: none;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 32px rgba(168,85,247,0.35);
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 12px 40px rgba(168,85,247,0.5);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.8);
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.12);
+      transform: translateY(-2px);
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-top: 32px;
+      padding-top: 28px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .meta-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .rating-stars {
+      display: flex;
+      gap: 2px;
+    }
+
+    .star {
+      color: #f59e0b;
+      font-size: 12px;
+    }
+
+    /* ─── CONTENT ROWS ───────────────────────────────── */
+    .content {
+      position: relative;
+      z-index: 1;
+      padding: 0 0 80px;
+    }
+
+    .row-section {
+      margin-bottom: 16px;
+    }
+
+    .row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 64px 20px;
+    }
+
+    .row-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .row-action {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+      text-decoration: none;
+      letter-spacing: 0.03em;
+    }
+
+    .row-action:hover {
+      opacity: 1;
+    }
+
+    /* Scrollable track */
+    .cards-track-wrap {
+      padding: 8px 64px 24px;
+      overflow: hidden;
+    }
+
+    .cards-track {
+      display: flex;
+      gap: 16px;
+      transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      will-change: transform;
+    }
+
+    /* ─── CARDS ──────────────────────────────────────── */
+    .card {
+      flex-shrink: 0;
+      width: var(--card-w);
+      cursor: pointer;
+      position: relative;
+      transition: transform var(--transition), z-index 0s;
+      outline: none;
+    }
+
+    .card:focus {
+      outline: none;
+    }
+
+    .card-art {
+      width: 100%;
+      height: var(--card-h);
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      transition:
+        box-shadow var(--transition),
+        transform var(--transition);
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .card-art-inner {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .card:hover .card-art-inner,
+    .card.focused .card-art-inner {
+      transform: scale(1.06);
+    }
+
+    .card-art-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .card:hover .card-art-overlay,
+    .card.focused .card-art-overlay {
+      opacity: 1;
+    }
+
+    .card-quick-info {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity var(--transition), transform var(--transition);
+    }
+
+    .card:hover .card-quick-info,
+    .card.focused .card-quick-info {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .card-genre-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 3px 8px;
+      border-radius: 100px;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      margin-bottom: 6px;
+    }
+
+    .card-play-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    .card-play-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: #0a0a0f;
+      margin-left: 2px;
+    }
+
+    .card:hover .card-art,
+    .card.focused .card-art {
+      transform: translateY(-6px);
+      box-shadow:
+        0 24px 60px rgba(0,0,0,0.5),
+        0 0 0 2px rgba(255,255,255,0.12);
+    }
+
+    .card.focused .card-art {
+      box-shadow:
+        0 24px 60px rgba(0,0,0,0.6),
+        0 0 0 2px var(--card-glow, rgba(168,85,247,0.8)),
+        0 0 40px rgba(168,85,247,0.2);
+    }
+
+    .card-info {
+      padding: 12px 4px 4px;
+    }
+
+    .card-name {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Wide cards for featured row */
+    .row-section.featured .card {
+      --card-w: 300px;
+      --card-h: 200px;
+    }
+
+    .row-section.featured .card-art {
+      border-radius: 20px;
+    }
+
+    .row-section.featured .card-art-inner {
+      border-radius: 0;
+    }
+
+    /* ─── CARD COLOR THEMES ──────────────────────────── */
+    .c1 .card-art-inner { background: linear-gradient(145deg, #1a0533, #4c1d95, #7c3aed); }
+    .c2 .card-art-inner { background: linear-gradient(145deg, #0c1445, #1e3a8a, #2563eb); }
+    .c3 .card-art-inner { background: linear-gradient(145deg, #052e16, #166534, #16a34a); }
+    .c4 .card-art-inner { background: linear-gradient(145deg, #450a0a, #991b1b, #dc2626); }
+    .c5 .card-art-inner { background: linear-gradient(145deg, #1c1917, #44403c, #f59e0b); }
+    .c6 .card-art-inner { background: linear-gradient(145deg, #0f172a, #0e7490, #06b6d4); }
+    .c7 .card-art-inner { background: linear-gradient(145deg, #2d1b69, #7c3aed, #ec4899); }
+    .c8 .card-art-inner { background: linear-gradient(145deg, #0f2027, #203a43, #2c5364); }
+    .c9 .card-art-inner { background: linear-gradient(145deg, #3d0030, #c2185b, #f48fb1); }
+    .c10 .card-art-inner { background: linear-gradient(145deg, #1a2a00, #4a7c59, #a8e063); }
+    .c11 .card-art-inner { background: linear-gradient(145deg, #200122, #6f0000, #ff6b35); }
+    .c12 .card-art-inner { background: linear-gradient(145deg, #0a0a0a, #434343, #ffffff); }
+
+    /* ─── CARD GLOW COLORS ───────────────────────────── */
+    .c1 { --card-glow: rgba(139,92,246,0.9); --card-color: #7c3aed; }
+    .c2 { --card-glow: rgba(59,130,246,0.9); --card-color: #2563eb; }
+    .c3 { --card-glow: rgba(34,197,94,0.9); --card-color: #16a34a; }
+    .c4 { --card-glow: rgba(239,68,68,0.9); --card-color: #dc2626; }
+    .c5 { --card-glow: rgba(245,158,11,0.9); --card-color: #f59e0b; }
+    .c6 { --card-glow: rgba(6,182,212,0.9); --card-color: #06b6d4; }
+    .c7 { --card-glow: rgba(236,72,153,0.9); --card-color: #ec4899; }
+    .c8 { --card-glow: rgba(44,83,100,0.9); --card-color: #2c5364; }
+    .c9 { --card-glow: rgba(244,143,177,0.9); --card-color: #f48fb1; }
+    .c10 { --card-glow: rgba(168,224,99,0.9); --card-color: #a8e063; }
+    .c11 { --card-glow: rgba(255,107,53,0.9); --card-color: #ff6b35; }
+    .c12 { --card-glow: rgba(200,200,200,0.9); --card-color: #aaaaaa; }
+
+    /* Noise texture overlay on cards */
+    .card-art-inner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+      opacity: 0.3;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    /* ─── NAVIGATION DOTS ────────────────────────────── */
+    .row-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 0 16px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+    }
+
+    .dot.active {
+      width: 20px;
+      border-radius: 3px;
+      background: var(--accent);
+    }
+
+    /* ─── SIDE NAV (PS5 style left sidebar hint) ─────── */
+    .side-nav {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 20px 14px;
+      background: rgba(255,255,255,0.03);
+      border-right: 1px solid rgba(255,255,255,0.04);
+      border-radius: 0 20px 20px 0;
+      backdrop-filter: blur(20px);
+    }
+
+    .side-nav-item {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      position: relative;
+    }
+
+    .side-nav-item svg {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: rgba(255,255,255,0.35);
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.2s;
+    }
+
+    .side-nav-item:hover svg,
+    .side-nav-item.active svg {
+      stroke: rgba(255,255,255,0.9);
+    }
+
+    .side-nav-item.active {
+      background: rgba(168,85,247,0.15);
+    }
+
+    .side-nav-item:hover {
+      background: rgba(255,255,255,0.07);
+      transform: scale(1.08);
+    }
+
+    .side-nav-tooltip {
+      position: absolute;
+      left: calc(100% + 12px);
+      white-space: nowrap;
+      background: rgba(20,20,30,0.95);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.2s, transform 0.2s;
+      backdrop-filter: blur(20px);
+    }
+
+    .side-nav-item:hover .side-nav-tooltip {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* ─── KEYBOARD HINT ──────────────────────────────── */
+    .kbd-hints {
+      position: fixed;
+      bottom: 28px;
+      right: 48px;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      opacity: 0.4;
+      transition: opacity 0.3s;
+    }
+
+    .kbd-hints:hover { opacity: 0.8; }
+
+    .kbd-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 22px;
+      padding: 0 6px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      font-family: inherit;
+    }
+
+    /* ─── SCROLLBAR ──────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ─── PAGE TRANSITION ────────────────────────────── */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    }
+
+    .row-section {
+      animation: fadeInUp 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+    }
+
+    .row-section:nth-child(1) { animation-delay: 0.1s; }
+    .row-section:nth-child(2) { animation-delay: 0.2s; }
+    .row-section:nth-child(3) { animation-delay: 0.3s; }
+
+    /* ─── FOCUS RING for accessibility ───────────────── */
+    .card.keyboard-focused .card-art {
+      box-shadow:
+        0 24px 60px rgba(0,0,0,0.6),
+        0 0 0 3px var(--card-glow, rgba(168,85,247,0.9)),
+        0 0 60px rgba(168,85,247,0.3);
+      transform: translateY(-8px) scale(1.03);
+    }
+
+    /* ─── SELECTED CARD DETAIL PANEL ─────────────────── */
+    .detail-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 80;
+      padding: 24px 64px;
+      background: linear-gradient(to top, rgba(8,8,15,1) 60%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transform: translateY(100%);
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      pointer-events: none;
+    }
+
+    .detail-panel.visible {
+      transform: translateY(0);
+      pointer-events: all;
+    }
+
+    .detail-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .detail-thumb {
+      width: 56px;
+      height: 78px;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+
+    .detail-text h3 {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .detail-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- AMBIENT BLOBS -->
+<div class="ambient">
+  <div class="ambient-blob blob1 active"></div>
+  <div class="ambient-blob blob2 active"></div>
+  <div class="ambient-blob blob3"></div>
+</div>
+
+<!-- TOPBAR -->
+<nav class="topbar">
+  <div class="logo">ArcadeWave</div>
+  <div class="nav-right">
+    <div class="time-display" id="clock">--:--</div>
+    <!-- Search icon -->
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </div>
+    <!-- Bell icon -->
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </div>
+    <!-- Avatar -->
+    <div class="avatar"></div>
+  </div>
+</nav>
+
+<!-- SIDE NAV -->
+<nav class="side-nav">
+  <div class="side-nav-item active">
+    <svg viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="side-nav-tooltip">Accueil</span>
+  </div>
+  <div class="side-nav-item">
+    <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <span class="side-nav-tooltip">Jeux</span>
+  </div>
+  <div class="side-nav-item">
+    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span class="side-nav-tooltip">Favoris</span>
+  </div>
+  <div class="side-nav-item">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span class="side-nav-tooltip">Communaute</span>
+  </div>
+  <div class="side-nav-item">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/></svg>
+    <span class="side-nav-tooltip">Parametres</span>
+  </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+  <div class="hero-bg">
+    <div class="hero-bg-image"></div>
+  </div>
+  <div class="hero-art">
+    <div class="hero-art-inner"></div>
+  </div>
+  <div class="hero-content">
+    <div class="hero-tag">Jeu en vedette</div>
+    <h1>Neon<br>Requiem</h1>
+    <p>Un RPG d'action atmospherique dans un Tokyo futuriste en ruines. Affronte des centaines d'ennemis et revele la verite derriere la chute.</p>
+    <div class="hero-actions">
+      <button class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Jouer
+      </button>
+      <button class="btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Infos
+      </button>
+    </div>
+    <div class="hero-meta">
+      <div class="meta-item">
+        <span class="meta-label">Note</span>
+        <div class="rating-stars">
+          <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star" style="opacity:0.4">★</span>
+        </div>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Genre</span>
+        <span class="meta-value">RPG / Action</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Joueurs</span>
+        <span class="meta-value">1-4 Co-op</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Taille</span>
+        <span class="meta-value">48 GB</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CARD ROWS -->
+<div class="content">
+
+  <!-- Recently played -->
+  <div class="row-section" data-row="0">
+    <div class="row-header">
+      <span class="row-title">Recemment joue</span>
+      <a class="row-action">Voir tout &rsaquo;</a>
+    </div>
+    <div class="cards-track-wrap">
+      <div class="cards-track" id="row-0">
+        <div class="card c1" data-row="0" data-col="0" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">RPG</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Neon Requiem</div>
+            <div class="card-sub">2h ago &middot; 47h total</div>
+          </div>
+        </div>
+        <div class="card c2" data-row="0" data-col="1" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">FPS</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Void Protocol</div>
+            <div class="card-sub">Hier &middot; 120h total</div>
+          </div>
+        </div>
+        <div class="card c3" data-row="0" data-col="2" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Strategy</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Emerald Throne</div>
+            <div class="card-sub">3 jours &middot; 88h total</div>
+          </div>
+        </div>
+        <div class="card c4" data-row="0" data-col="3" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Horror</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Scarlet Abyss</div>
+            <div class="card-sub">1 sem. &middot; 22h total</div>
+          </div>
+        </div>
+        <div class="card c5" data-row="0" data-col="4" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Racing</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Burnout Grid X</div>
+            <div class="card-sub">2 sem. &middot; 65h total</div>
+          </div>
+        </div>
+        <div class="card c6" data-row="0" data-col="5" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Adventure</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Deep Signal</div>
+            <div class="card-sub">1 mois &middot; 34h total</div>
+          </div>
+        </div>
+        <div class="card c7" data-row="0" data-col="6" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Platformer</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Stardrift</div>
+            <div class="card-sub">2 mois &middot; 19h total</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Games -->
+  <div class="row-section" data-row="1">
+    <div class="row-header">
+      <span class="row-title">Top du moment</span>
+      <a class="row-action">Voir tout &rsaquo;</a>
+    </div>
+    <div class="cards-track-wrap">
+      <div class="cards-track" id="row-1">
+        <div class="card c8" data-row="1" data-col="0" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">MMO</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Oceania Wars</div>
+            <div class="card-sub">#1 &middot; 2.4M joueurs</div>
+          </div>
+        </div>
+        <div class="card c9" data-row="1" data-col="1" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Battle Royale</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Crimson Drop</div>
+            <div class="card-sub">#2 &middot; 1.9M joueurs</div>
+          </div>
+        </div>
+        <div class="card c10" data-row="1" data-col="2" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Survival</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Verdant Wilds</div>
+            <div class="card-sub">#3 &middot; 1.2M joueurs</div>
+          </div>
+        </div>
+        <div class="card c11" data-row="1" data-col="3" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Fighting</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Iron Storm</div>
+            <div class="card-sub">#4 &middot; 980K joueurs</div>
+          </div>
+        </div>
+        <div class="card c12" data-row="1" data-col="4" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Puzzle</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Monochrome</div>
+            <div class="card-sub">#5 &middot; 760K joueurs</div>
+          </div>
+        </div>
+        <div class="card c1" data-row="1" data-col="5" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">RPG</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Astral Gate</div>
+            <div class="card-sub">#6 &middot; 640K joueurs</div>
+          </div>
+        </div>
+        <div class="card c3" data-row="1" data-col="6" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Simulation</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Terraforma</div>
+            <div class="card-sub">#7 &middot; 510K joueurs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Arrivals -->
+  <div class="row-section" data-row="2">
+    <div class="row-header">
+      <span class="row-title">Nouveautes</span>
+      <a class="row-action">Voir tout &rsaquo;</a>
+    </div>
+    <div class="cards-track-wrap">
+      <div class="cards-track" id="row-2">
+        <div class="card c6" data-row="2" data-col="0" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Sci-Fi</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Pulsar Station</div>
+            <div class="card-sub">Sorti il y a 2 jours</div>
+          </div>
+        </div>
+        <div class="card c4" data-row="2" data-col="1" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Action</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Red Protocol</div>
+            <div class="card-sub">Sorti il y a 5 jours</div>
+          </div>
+        </div>
+        <div class="card c7" data-row="2" data-col="2" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Fantasy</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Dream Weaver</div>
+            <div class="card-sub">Sorti il y a 1 sem.</div>
+          </div>
+        </div>
+        <div class="card c2" data-row="2" data-col="3" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">MOBA</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Nexus Arena</div>
+            <div class="card-sub">Sorti il y a 2 sem.</div>
+          </div>
+        </div>
+        <div class="card c5" data-row="2" data-col="4" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Sports</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Gold League 25</div>
+            <div class="card-sub">Sorti il y a 3 sem.</div>
+          </div>
+        </div>
+        <div class="card c10" data-row="2" data-col="5" tabindex="0">
+          <div class="card-art">
+            <div class="card-art-inner"></div>
+            <div class="card-art-overlay"></div>
+            <div class="card-quick-info">
+              <div class="card-genre-badge">Open World</div>
+              <div class="card-play-btn"><svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">Verdant Coast</div>
+            <div class="card-sub">Sorti il y a 1 mois</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- KEYBOARD HINTS -->
+<div class="kbd-hints">
+  <div class="kbd-hint">
+    <span class="kbd">&#8592;</span><span class="kbd">&#8594;</span> Naviguer
+  </div>
+  <div class="kbd-hint">
+    <span class="kbd">&#8593;</span><span class="kbd">&#8595;</span> Lignes
+  </div>
+  <div class="kbd-hint">
+    <span class="kbd">Enter</span> Jouer
+  </div>
+</div>
+
+<script>
+  // ─── CLOCK ───────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${h}:${m}`;
+  }
+  updateClock();
+  setInterval(updateClock, 10000);
+
+  // ─── AMBIENT COLOR ENGINE ─────────────────────────────────
+  const blob1 = document.querySelector('.blob1');
+  const blob2 = document.querySelector('.blob2');
+  const blob3 = document.querySelector('.blob3');
+
+  function setAmbient(color1, color2) {
+    blob1.style.background = color1;
+    blob2.style.background = color2 || color1;
+    blob3.style.background = color1;
+    blob3.classList.add('active');
+  }
+
+  const cardColorMap = {
+    c1: ['#7c3aed', '#4c1d95'],
+    c2: ['#2563eb', '#1e3a8a'],
+    c3: ['#16a34a', '#166534'],
+    c4: ['#dc2626', '#991b1b'],
+    c5: ['#f59e0b', '#92400e'],
+    c6: ['#06b6d4', '#0e7490'],
+    c7: ['#ec4899', '#9d174d'],
+    c8: ['#2c5364', '#0f2027'],
+    c9: ['#f48fb1', '#c2185b'],
+    c10: ['#a8e063', '#4a7c59'],
+    c11: ['#ff6b35', '#6f0000'],
+    c12: ['#888888', '#333333'],
+  };
+
+  function getCardClass(card) {
+    return Array.from(card.classList).find(c => c.match(/^c\d+$/));
+  }
+
+  // ─── KEYBOARD NAVIGATION ─────────────────────────────────
+  const rows = [
+    [...document.querySelectorAll('[data-row="0"]')],
+    [...document.querySelectorAll('[data-row="1"]')],
+    [...document.querySelectorAll('[data-row="2"]')],
+  ];
+
+  let currentRow = 0;
+  let currentCol = 0;
+  let usingKeyboard = false;
+
+  function focusCard(row, col) {
+    // Clear all
+    document.querySelectorAll('.card').forEach(c => {
+      c.classList.remove('keyboard-focused');
+    });
+
+    if (row < 0 || row >= rows.length) return;
+    const rowCards = rows[row].filter(el => el.tagName === 'DIV' && el.classList.contains('card'));
+    if (col < 0 || col >= rowCards.length) return;
+
+    currentRow = row;
+    currentCol = col;
+
+    const card = rowCards[col];
+    card.classList.add('keyboard-focused');
+    card.focus();
+
+    // Ambient
+    const cls = getCardClass(card);
+    if (cls && cardColorMap[cls]) {
+      setAmbient(cardColorMap[cls][0], cardColorMap[cls][1]);
+    }
+
+    // Scroll card into view within track
+    const track = document.getElementById(`row-${row}`);
+    const trackWrap = track.parentElement;
+    const wrapWidth = trackWrap.clientWidth;
+    const cardOffsetLeft = card.offsetLeft;
+    const cardWidth = card.offsetWidth;
+    const padding = 64;
+
+    const desiredScroll = cardOffsetLeft - padding;
+    const maxScroll = track.scrollWidth - wrapWidth;
+    const clampedScroll = Math.max(0, Math.min(desiredScroll, maxScroll));
+
+    track.style.transform = `translateX(-${clampedScroll}px)`;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    const validKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter'];
+    if (!validKeys.includes(e.key)) return;
+
+    e.preventDefault();
+    usingKeyboard = true;
+
+    const rowCards = rows[currentRow]?.filter(el => el.tagName === 'DIV' && el.classList.contains('card')) || [];
+
+    if (e.key === 'ArrowRight') {
+      focusCard(currentRow, Math.min(currentCol + 1, rowCards.length - 1));
+    } else if (e.key === 'ArrowLeft') {
+      focusCard(currentRow, Math.max(currentCol - 1, 0));
+    } else if (e.key === 'ArrowDown') {
+      const nextRow = Math.min(currentRow + 1, rows.length - 1);
+      const nextRowCards = rows[nextRow].filter(el => el.tagName === 'DIV' && el.classList.contains('card'));
+      focusCard(nextRow, Math.min(currentCol, nextRowCards.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      const prevRow = Math.max(currentRow - 1, 0);
+      const prevRowCards = rows[prevRow].filter(el => el.tagName === 'DIV' && el.classList.contains('card'));
+      focusCard(prevRow, Math.min(currentCol, prevRowCards.length - 1));
+    } else if (e.key === 'Enter') {
+      const card = rowCards[currentCol];
+      if (card) {
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => card.style.transform = '', 150);
+      }
+    }
+  });
+
+  // ─── MOUSE HOVER AMBIENT ──────────────────────────────────
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      const cls = getCardClass(card);
+      if (cls && cardColorMap[cls]) {
+        setAmbient(cardColorMap[cls][0], cardColorMap[cls][1]);
+      }
+    });
+  });
+
+  // ─── SIDE NAV ACTIVE STATE ────────────────────────────────
+  document.querySelectorAll('.side-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.querySelectorAll('.side-nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+
+  // ─── CARD CLICK RIPPLE ────────────────────────────────────
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => {
+      card.style.transform = 'scale(0.97)';
+      setTimeout(() => card.style.transform = '', 200);
+    });
+  });
+
+  // Initialize first focus quietly (no visual highlight until keyboard used)
+  // Just set ambient to first card
+  setAmbient('#7c3aed', '#4c1d95');
+</script>
+</body>
+</html>
