@@ -3,15 +3,15 @@
 @tailwind utilities;
 
 :root {
-  --topbar-h: 64px;
-  --sidenav-w: 64px;
+  --topbar-h: 56px;
+  --bottomnav-h: 68px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 
 body {
-  background: #07070f;
+  background: #060610;
   color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -23,22 +23,30 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 9998;
   pointer-events: none;
   background: repeating-linear-gradient(
     0deg,
     transparent,
     transparent 3px,
-    rgba(0, 0, 0, 0.04) 3px,
-    rgba(0, 0, 0, 0.04) 4px
+    rgba(0, 0, 0, 0.03) 3px,
+    rgba(0, 0, 0, 0.03) 4px
   );
+}
+
+/* ─── NOISE TEXTURE ──────────────────────────────── */
+.noise-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  opacity: 0.5;
 }
 
 /* ─── SCROLLBAR ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -48,9 +56,9 @@ body::after {
   position: absolute;
   top: 0; left: 0;
   width: 40%; height: 100%;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.05) 50%, transparent 100%);
   transform: translateX(-100%) skewX(-15deg);
-  animation: shine 5s ease-in-out infinite 2s;
+  animation: shine 6s ease-in-out infinite 3s;
   pointer-events: none;
 }
 
@@ -69,16 +77,16 @@ body::after {
 
 /* ─── DOT GRID ───────────────────────────────────── */
 .dot-grid {
-  background-image: radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px);
-  background-size: 28px 28px;
+  background-image: radial-gradient(rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 /* ─── HEX GRID (hero) ────────────────────────────── */
 .hex-grid {
   background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+  background-size: 56px 56px;
 }
 
 /* ─── XP BAR ─────────────────────────────────────── */
@@ -89,7 +97,51 @@ body::after {
   animation: xp-fill 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.8s both;
 }
 
-/* ─── ANIMATIONS ─────────────────────────────────── */
+/* ─── BLOB DRIFT ANIMATIONS ──────────────────────── */
+@keyframes blob-drift-1 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  33%       { transform: translate(40px, -30px) scale(1.05); }
+  66%       { transform: translate(-20px, 20px) scale(0.97); }
+}
+@keyframes blob-drift-2 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  40%       { transform: translate(-35px, 25px) scale(1.04); }
+  70%       { transform: translate(20px, -15px) scale(0.98); }
+}
+@keyframes blob-drift-3 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  50%       { transform: translate(25px, 30px) scale(1.06); }
+}
+@keyframes blob-drift-4 {
+  0%, 100% { transform: translate(0px, 0px) scale(1); }
+  45%       { transform: translate(-20px, -25px) scale(1.03); }
+  80%       { transform: translate(15px, 10px) scale(0.96); }
+}
+
+.blob-drift-1 { animation: blob-drift-1 18s ease-in-out infinite; }
+.blob-drift-2 { animation: blob-drift-2 22s ease-in-out infinite; }
+.blob-drift-3 { animation: blob-drift-3 16s ease-in-out infinite; }
+.blob-drift-4 { animation: blob-drift-4 20s ease-in-out infinite; }
+
+/* ─── KEN BURNS ──────────────────────────────────── */
+@keyframes ken-burns {
+  0%   { transform: scale(1.06) translate(0px, 0px); }
+  50%  { transform: scale(1.12) translate(-12px, -8px); }
+  100% { transform: scale(1.06) translate(0px, 0px); }
+}
+.ken-burns {
+  animation: ken-burns 20s ease-in-out infinite;
+}
+
+/* ─── FLOAT ART ──────────────────────────────────── */
+@keyframes float-art {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-10px) rotate(0.5deg); }
+  66%       { transform: translateY(-5px) rotate(-0.5deg); }
+}
+.float-art { animation: float-art 6s ease-in-out infinite; }
+
+/* ─── OTHER ANIMATIONS ───────────────────────────── */
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.4; transform: scale(0.6); }
@@ -97,11 +149,6 @@ body::after {
 @keyframes bounce-y {
   0%, 100% { transform: translateY(0); }
   50%       { transform: translateY(6px); }
-}
-@keyframes float-art {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33%       { transform: translateY(-10px) rotate(0.5deg); }
-  66%       { transform: translateY(-5px) rotate(-0.5deg); }
 }
 @keyframes neon-pulse {
   0%, 100% { opacity: 0.5; }
@@ -112,8 +159,7 @@ body::after {
   to   { transform: rotate(360deg); }
 }
 
-.float-art { animation: float-art 6s ease-in-out infinite; }
-.animate-bounce-y { animation: bounce-y 1.5s ease-in-out infinite; }
-.animate-neon-pulse { animation: neon-pulse 2.5s ease-in-out infinite; }
-.animate-spin-slow { animation: spin-slow 20s linear infinite; }
-.animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+.animate-bounce-y    { animation: bounce-y 1.5s ease-in-out infinite; }
+.animate-neon-pulse  { animation: neon-pulse 2.5s ease-in-out infinite; }
+.animate-spin-slow   { animation: spin-slow 20s linear infinite; }
+.animate-pulse-dot   { animation: pulse-dot 2s ease-in-out infinite; }

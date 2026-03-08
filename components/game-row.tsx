@@ -36,7 +36,7 @@ export default function GameRow({
   const [canScrollRight, setCanScrollRight] = useState(true)
   const [isHoveringRow, setIsHoveringRow] = useState(false)
 
-  const SCROLL_AMOUNT = 800
+  const SCROLL_AMOUNT = 900
 
   const scroll = (dir: 'left' | 'right') => {
     const el = trackRef.current
@@ -51,7 +51,6 @@ export default function GameRow({
     setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4)
   }
 
-  // Mouse wheel -> horizontal scroll
   const onWheel = (e: React.WheelEvent) => {
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       e.preventDefault()
@@ -61,31 +60,34 @@ export default function GameRow({
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-60px' }}
-      transition={{ duration: 0.55, delay: rowIndex * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.5, delay: rowIndex * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
       onMouseEnter={() => setIsHoveringRow(true)}
       onMouseLeave={() => setIsHoveringRow(false)}
       className="relative"
     >
       {/* Row header */}
-      <div className="flex items-end justify-between mb-5"
-        style={{ paddingLeft: 'max(80px, calc(64px + 1.5rem))', paddingRight: '3rem' }}
-      >
+      <div className="flex items-end justify-between mb-5 px-8 md:px-16">
         <div className="flex items-center gap-3">
-          {/* Neon dot accent */}
-          <div className="w-1 h-6 rounded-full" style={{ background: 'linear-gradient(to bottom, rgba(168,85,247,0.8), rgba(6,182,212,0.4))' }} />
+          <div className="w-0.5 h-5 rounded-full" style={{ background: 'rgba(168,85,247,0.6)' }} />
           <div>
-            <h2 className="text-lg font-black tracking-tight leading-none">{title}</h2>
-            {subtitle && <p className="text-[11px] text-white/30 font-medium mt-1">{subtitle}</p>}
+            <h2 className="text-lg font-black tracking-tight leading-none text-white">{title}</h2>
+            {subtitle && <p className="text-[11px] mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.28)' }}>{subtitle}</p>}
           </div>
         </div>
-        <Link href={viewAllHref} className="text-xs font-bold text-white/35 hover:text-white/70 transition-colors flex items-center gap-1 uppercase tracking-widest">
-          Voir tout
-          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
+        <Link href={viewAllHref}>
+          <span className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors"
+            style={{ color: 'rgba(255,255,255,0.3)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
+          >
+            Voir tout
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </span>
         </Link>
       </div>
 
@@ -93,12 +95,16 @@ export default function GameRow({
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: isHoveringRow && canScrollLeft ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.18 }}
         onClick={() => scroll('left')}
-        className="absolute left-2 top-1/2 z-20 w-10 h-10 rounded-xl bg-[#07070f]/90 border border-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/10 transition-colors"
-        style={{ transform: 'translateY(calc(-50% + 16px))' }}
+        className="absolute left-3 top-1/2 z-20 w-9 h-9 rounded-xl flex items-center justify-center transition-colors backdrop-blur-sm"
+        style={{
+          transform: 'translateY(calc(-50% + 16px))',
+          background: 'rgba(6,6,16,0.88)',
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
       </motion.button>
@@ -106,33 +112,33 @@ export default function GameRow({
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: isHoveringRow && canScrollRight ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.18 }}
         onClick={() => scroll('right')}
-        className="absolute right-2 top-1/2 z-20 w-10 h-10 rounded-xl bg-[#07070f]/90 border border-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/10 transition-colors"
-        style={{ transform: 'translateY(calc(-50% + 16px))' }}
+        className="absolute right-3 top-1/2 z-20 w-9 h-9 rounded-xl flex items-center justify-center transition-colors backdrop-blur-sm"
+        style={{
+          transform: 'translateY(calc(-50% + 16px))',
+          background: 'rgba(6,6,16,0.88)',
+          border: '1px solid rgba(255,255,255,0.1)',
+        }}
       >
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+        <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
       </motion.button>
 
       {/* Fade edges */}
-      <div
-        className="absolute left-0 top-0 bottom-8 w-16 z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to right, #07070f, transparent)' }}
-      />
-      <div
-        className="absolute right-0 top-0 bottom-8 w-16 z-10 pointer-events-none"
-        style={{ background: 'linear-gradient(to left, #07070f, transparent)' }}
-      />
+      <div className="absolute left-0 top-0 bottom-8 w-12 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to right, #060610, transparent)' }} />
+      <div className="absolute right-0 top-0 bottom-8 w-12 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to left, #060610, transparent)' }} />
 
       {/* Scrollable track */}
       <div
         ref={trackRef}
         onScroll={onScroll}
         onWheel={onWheel}
-        className="flex gap-4 overflow-x-auto no-scrollbar pb-4"
-        style={{ scrollSnapType: 'x proximity', paddingLeft: 'max(80px, calc(64px + 1.5rem))', paddingRight: '3rem' }}
+        className="flex gap-4 overflow-x-auto no-scrollbar pb-4 px-8 md:px-16"
+        style={{ scrollSnapType: 'x proximity' }}
       >
         {games.map((game) => (
           <div key={game.id} style={{ scrollSnapAlign: 'start' }}>

@@ -61,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         )}
       </head>
-      <body className="bg-[#07070f] text-white antialiased overflow-x-hidden">
+      <body className="bg-[#060610] text-white antialiased overflow-x-hidden">
         {children}
 
         {/* Google Analytics */}
